@@ -8,7 +8,8 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 //Correo de pruebas 1: correopruebasdad@gmail.com
-//Contraseña: dneditxmosyhffjf
+//Contraseña: ukevzowqnrrmstsm 
+
 public class ClienteIMAP {
     private SSLSocket socket;
     private BufferedWriter writer;
@@ -56,6 +57,100 @@ public class ClienteIMAP {
             while (!response.equals("A3 OK FETCH completed.")) {
                 System.out.println(response);
                 response = reader.readLine();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public void leerContenidoMensaje(int numMensaje) {
+        try {
+            // Seleccionar el buzón INBOX
+            writer.write("A3 SELECT INBOX\r\n");
+            writer.flush();
+            String response;
+            while (!(response = reader.readLine()).startsWith("A3 OK")) {
+                System.out.println(response);
+            }
+
+            // Ahora fetch el contenido del mensaje
+            writer.write("A4 FETCH " + numMensaje + " BODY[TEXT]\r\n");
+            writer.flush();
+            while (!(response = reader.readLine()).startsWith("A4 OK")) {
+                System.out.println(response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void eliminarMensaje(int numMensaje) {
+        try {
+            // Seleccionar el buzón INBOX
+            writer.write("A3 SELECT INBOX\r\n");
+            writer.flush();
+            String response;
+            while (!(response = reader.readLine()).startsWith("A3 OK")) {
+                System.out.println(response);
+            }
+
+            // Enviar el comando para marcar el mensaje como eliminado
+            writer.write("A5 STORE " + numMensaje + " +FLAGS \\Deleted\r\n");
+            writer.flush();
+            while (!(response = reader.readLine()).startsWith("A5 OK")) {
+                System.out.println(response);
+            }
+
+            // Enviar el comando para expurgar el mensaje marcado
+            writer.write("A6 EXPUNGE\r\n");
+            writer.flush();
+            while (!(response = reader.readLine()).startsWith("A6 OK")) {
+                System.out.println(response);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void crearCarpeta(String nombreCarpeta) {
+        try {
+            writer.write("A7 CREATE " + nombreCarpeta + "\r\n");
+            writer.flush();
+            String response;
+            while (!(response = reader.readLine()).startsWith("A7 OK")) {
+                System.out.println(response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void eliminarCarpeta(String nombreCarpeta) {
+        try {
+            writer.write("A8 DELETE " + nombreCarpeta + "\r\n");
+            writer.flush();
+            String response;
+            while (!(response = reader.readLine()).startsWith("A8 OK")) {
+                System.out.println(response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void listarCorreosCarpeta(String nombreCarpeta) {
+        try {
+            writer.write("A9 SELECT " + nombreCarpeta + "\r\n");
+            writer.flush();
+            String response;
+            while (!(response = reader.readLine()).startsWith("A9 OK")) {
+                System.out.println(response);
+            }
+            writer.write("A10 FETCH 1:* (BODY[HEADER.FIELDS (SUBJECT DATE FROM)])\r\n");
+            writer.flush();
+            while (!(response = reader.readLine()).startsWith("A10 OK")) {
+                System.out.println(response);
             }
         } catch (Exception e) {
             e.printStackTrace();

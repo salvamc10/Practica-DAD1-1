@@ -4,7 +4,7 @@ import java.util.Hashtable;
 
 public class AccesoAplicacion {
     private Hashtable<String, String> usuarios;
-    private Hashtable<String, Boolean> roles; // true para administrador, false para usuario regular
+    private Hashtable<String, Boolean> roles;
 
     public AccesoAplicacion() {
         usuarios = new Hashtable<>();

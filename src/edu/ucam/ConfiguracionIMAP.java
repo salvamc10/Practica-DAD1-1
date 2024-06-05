@@ -9,7 +9,9 @@ public class ConfiguracionIMAP {
         configuracionesIMAP = new Hashtable<>();
     }
 
-    public void configurarServidorIMAP(String usuario, String servidorIMAP, int puertoIMAP, String usuarioIMAP, String contraseñaIMAP) {
+    public void configurarServidorIMAP(String usuario, String usuarioIMAP, String contraseñaIMAP) {
+        String servidorIMAP = "imap.gmail.com";
+        int puertoIMAP = 993;
         configuracionesIMAP.put(usuario, new String[]{servidorIMAP, String.valueOf(puertoIMAP), usuarioIMAP, contraseñaIMAP});
     }
 
