@@ -97,8 +97,8 @@ public class Main {
             System.out.println("6. Eliminar carpeta");
             System.out.println("7. Listar correos de una carpeta");
             System.out.println("8. Mover mensaje entre carpetas");
-            System.out.println("9. ");
-            System.out.println("9. Salir");
+            System.out.println("9. Descargar archivos adjuntos");
+            System.out.println("10. Salir");
 
             System.out.print("Seleccione una opción: ");
             int opcion = Integer.parseInt(scanner.nextLine());

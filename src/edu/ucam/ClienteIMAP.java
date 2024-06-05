@@ -215,8 +215,8 @@ public class ClienteIMAP {
             }
             String bodyStructureString = bodyStructure.toString();
             
-            // Parse the body structure to find attachments
-            // This is a simplified example; a real implementation would need to handle more complex cases
+            // Analizar la estructura del cuerpo para encontrar los adjuntos
+            // Este es un ejemplo simplificado; una implementación real necesitaría manejar casos más complejos
             if (bodyStructureString.contains("attachment")) {
                 String[] parts = bodyStructureString.split("\\*");
                 for (String part : parts) {
@@ -224,7 +224,7 @@ public class ClienteIMAP {
                         String[] lines = part.split("\n");
                         String partId = lines[0].split(" ")[1].replace(".", "");
 
-                        // Fetch the part containing the attachment
+                        // Obtener la parte que contiene el adjunto
                         writer.write("A17 FETCH " + numMensaje + " BODY[" + partId + "]\r\n");
                         writer.flush();
                         StringBuilder attachmentData = new StringBuilder();
@@ -232,11 +232,11 @@ public class ClienteIMAP {
                             attachmentData.append(response).append("\n");
                         }
 
-                        // Decode the base64 data and save it to a file
+                        // Decodificar los datos base64 y guardarlos en un archivo
                         String base64Data = attachmentData.toString();
                         byte[] decodedData = Base64.getDecoder().decode(base64Data);
 
-                        // Write the decoded data to a file
+                        // Escribir los datos decodificados en un archivo
                         FileOutputStream fos = new FileOutputStream(carpetaDestino + "/adjunto_" + partId + ".dat");
                         fos.write(decodedData);
                         fos.close();
