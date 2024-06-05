@@ -156,6 +156,42 @@ public class ClienteIMAP {
             e.printStackTrace();
         }
     }
+    
+    public void moverMensaje(String origenCarpeta, String destinoCarpeta, int numMensaje) {
+        try {
+            // Seleccionar la carpeta de origen
+            writer.write("A11 SELECT " + origenCarpeta + "\r\n");
+            writer.flush();
+            String response;
+            while (!(response = reader.readLine()).startsWith("A11 OK")) {
+                System.out.println(response);
+            }
+
+            // Copiar el mensaje a la carpeta de destino
+            writer.write("A12 COPY " + numMensaje + " " + destinoCarpeta + "\r\n");
+            writer.flush();
+            while (!(response = reader.readLine()).startsWith("A12 OK")) {
+                System.out.println(response);
+            }
+
+            // Marcar el mensaje original como eliminado
+            writer.write("A13 STORE " + numMensaje + " +FLAGS \\Deleted\r\n");
+            writer.flush();
+            while (!(response = reader.readLine()).startsWith("A13 OK")) {
+                System.out.println(response);
+            }
+
+            // Expurgar el mensaje marcado como eliminado
+            writer.write("A14 EXPUNGE\r\n");
+            writer.flush();
+            while (!(response = reader.readLine()).startsWith("A14 OK")) {
+                System.out.println(response);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public void desconectar() {
         try {

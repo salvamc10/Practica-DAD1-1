@@ -96,7 +96,8 @@ public class Main {
             System.out.println("5. Crear carpeta");
             System.out.println("6. Eliminar carpeta");
             System.out.println("7. Listar correos de una carpeta");
-            System.out.println("8. Salir");
+            System.out.println("8. Mover mensaje entre carpetas");
+            System.out.println("9. Salir");
 
             System.out.print("Seleccione una opción: ");
             int opcion = Integer.parseInt(scanner.nextLine());
@@ -188,7 +189,26 @@ public class Main {
                         System.out.println("No hay configuración IMAP disponible para el usuario.");
                     }
                     break;
+                    
                 case 8:
+                    System.out.println("--- MOVER MENSAJE ENTRE CARPETAS ---");
+                    if (configuracionIMAP.tieneConfiguracion(usuario)) {
+                        String[] configuracion = configuracionIMAP.getConfiguracionIMAP(usuario);
+                        clienteIMAP.conectar(configuracion[0], Integer.parseInt(configuracion[1]), configuracion[2], configuracion[3]);
+                        System.out.print("Ingrese la carpeta de origen: ");
+                        String origenCarpeta = scanner.nextLine();
+                        System.out.print("Ingrese la carpeta de destino: ");
+                        String destinoCarpeta = scanner.nextLine();
+                        System.out.print("Ingrese el número del mensaje a mover: ");
+                        int numMensajeMover = Integer.parseInt(scanner.nextLine());
+                        clienteIMAP.moverMensaje(origenCarpeta, destinoCarpeta, numMensajeMover);
+                        clienteIMAP.desconectar();
+                    } else {
+                        System.out.println("No hay configuración IMAP disponible para el usuario.");
+                    }
+                    break;
+                    
+                case 9:
                     System.out.println("Cerrando sesión de usuario...");
                     return;
                 default:
