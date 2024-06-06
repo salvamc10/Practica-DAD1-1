@@ -60,10 +60,11 @@ public class ClienteIMAP {
             writer.write("A3 FETCH 1:* (BODY[HEADER.FIELDS (SUBJECT DATE FROM)])\r\n");
             writer.flush();
             // Leer la respuesta del servidor
-            response = reader.readLine();
-            while (!response.equals("A3 OK FETCH completed.")) {
+            while ((response = reader.readLine()) != null) {
                 System.out.println(response);
-                response = reader.readLine();
+                if (response.startsWith("A3 OK")) {
+                    break;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -200,6 +201,9 @@ public class ClienteIMAP {
         }
     }
     
+    //Correo de pruebas 1: correopruebasdad@gmail.com
+    //Contraseña: ukevzowqnrrmstsm 
+    ///Users/salvamc/Downloads/cosas
     public void descargarAdjuntos(int numMensaje, String rutaDescarga) {
         try {
             // Seleccionar el buzón INBOX
@@ -211,46 +215,72 @@ public class ClienteIMAP {
             }
 
             // Obtener el cuerpo completo del mensaje
-            writer.write("A4 FETCH " + numMensaje + " BODY[]\r\n");
+            writer.write("A4 FETCH " + numMensaje + " BODY.PEEK[]\r\n");
             writer.flush();
             StringBuilder mensajeCompleto = new StringBuilder();
-            while (!(response = reader.readLine()).startsWith("A4 OK")) {
+            while ((response = reader.readLine()) != null) {
                 mensajeCompleto.append(response).append("\n");
+                if (response.startsWith("A4 OK")) {
+                    break;
+                }
             }
 
             // Parsear el mensaje MIME y extraer los adjuntos
             String[] lineas = mensajeCompleto.toString().split("\n");
             boolean esAdjunto = false;
+            boolean esBase64 = false;
             String nombreArchivo = null;
             StringBuilder contenidoAdjunto = new StringBuilder();
             Pattern pattern = Pattern.compile("filename=\"(.*?)\"");
             for (String linea : lineas) {
                 if (linea.startsWith("Content-Disposition: attachment;")) {
                     esAdjunto = true;
+                    esBase64 = false;  // Resetear el flag de base64
                     Matcher matcher = pattern.matcher(linea);
                     if (matcher.find()) {
                         nombreArchivo = matcher.group(1);
                     }
-                } else if (esAdjunto) {
-                    if (linea.trim().isEmpty()) {
-                        // Decodificar y guardar el adjunto
-                        byte[] datosAdjunto = Base64.getMimeDecoder().decode(contenidoAdjunto.toString());
-                        try (OutputStream out = new FileOutputStream(rutaDescarga + "/" + nombreArchivo)) {
-                            out.write(datosAdjunto);
+                } else if (esAdjunto && linea.startsWith("Content-Transfer-Encoding: base64")) {
+                    esBase64 = true;
+                } else if (esAdjunto && esBase64) {
+                    if (linea.startsWith("--")) {
+                        // Guardar el adjunto cuando se encuentra un boundary
+                        if (contenidoAdjunto.length() > 0) {
+                            guardarArchivoAdjunto(nombreArchivo, contenidoAdjunto.toString(), rutaDescarga);
+                            contenidoAdjunto.setLength(0);
                         }
-                        contenidoAdjunto.setLength(0);
                         esAdjunto = false;
+                        esBase64 = false;
                         nombreArchivo = null;
                     } else {
-                        contenidoAdjunto.append(linea.trim());
+                        contenidoAdjunto.append(linea);
+                    }
+                } else if (esAdjunto && !esBase64) {
+                    if (linea.startsWith("--")) {
+                        esAdjunto = false;
                     }
                 }
+            }
+            // Asegurarse de guardar cualquier adjunto pendiente
+            if (contenidoAdjunto.length() > 0 && nombreArchivo != null) {
+                guardarArchivoAdjunto(nombreArchivo, contenidoAdjunto.toString(), rutaDescarga);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    private void guardarArchivoAdjunto(String nombreArchivo, String contenidoBase64, String rutaDescarga) {
+        try {
+            // Guardar el contenido Base64 directamente en un archivo
+            try (OutputStream out = new FileOutputStream(rutaDescarga + "/" + nombreArchivo)) {
+                out.write(contenidoBase64.getBytes());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
     public void desconectar() {
         try {
             if (socket != null && !socket.isClosed()) {

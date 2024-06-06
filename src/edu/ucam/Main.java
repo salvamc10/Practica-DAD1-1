@@ -190,7 +190,6 @@ public class Main {
                         System.out.println("No hay configuración IMAP disponible para el usuario.");
                     }
                     break;
-                    
                 case 9:
                     System.out.println("--- DESCARGAR ARCHIVOS ADJUNTOS ---");
                     if (configuracionIMAP.tieneConfiguracion(usuario)) {
@@ -206,7 +205,6 @@ public class Main {
                         System.out.println("No hay configuración IMAP disponible para el usuario.");
                     }
                     break;
-
                 case 8:
                     System.out.println("--- MOVER MENSAJE ENTRE CARPETAS ---");
                     if (configuracionIMAP.tieneConfiguracion(usuario)) {
