@@ -2,16 +2,20 @@ package edu.ucam;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.Base64;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 //Correo de pruebas 1: correopruebasdad@gmail.com
 //Contraseña: ukevzowqnrrmstsm 
+///Users/salvamc/Downloads/cosas
 
 public class ClienteIMAP {
     private SSLSocket socket;
@@ -196,55 +200,51 @@ public class ClienteIMAP {
         }
     }
     
-    public void descargarAdjuntos(int numMensaje, String carpetaDestino) {
+    public void descargarAdjuntos(int numMensaje, String rutaDescarga) {
         try {
             // Seleccionar el buzón INBOX
-            writer.write("A15 SELECT INBOX\r\n");
+            writer.write("A3 SELECT INBOX\r\n");
             writer.flush();
             String response;
-            while (!(response = reader.readLine()).startsWith("A15 OK")) {
+            while (!(response = reader.readLine()).startsWith("A3 OK")) {
                 System.out.println(response);
             }
 
-            // Fetch la estructura del mensaje para obtener los adjuntos
-            writer.write("A16 FETCH " + numMensaje + " BODYSTRUCTURE\r\n");
+            // Obtener el cuerpo completo del mensaje
+            writer.write("A4 FETCH " + numMensaje + " BODY[]\r\n");
             writer.flush();
-            StringBuilder bodyStructure = new StringBuilder();
-            while (!(response = reader.readLine()).startsWith("A16 OK")) {
-                bodyStructure.append(response).append("\n");
+            StringBuilder mensajeCompleto = new StringBuilder();
+            while (!(response = reader.readLine()).startsWith("A4 OK")) {
+                mensajeCompleto.append(response).append("\n");
             }
-            String bodyStructureString = bodyStructure.toString();
-            
-            // Analizar la estructura del cuerpo para encontrar los adjuntos
-            // Este es un ejemplo simplificado; una implementación real necesitaría manejar casos más complejos
-            if (bodyStructureString.contains("attachment")) {
-                String[] parts = bodyStructureString.split("\\*");
-                for (String part : parts) {
-                    if (part.contains("attachment")) {
-                        String[] lines = part.split("\n");
-                        String partId = lines[0].split(" ")[1].replace(".", "");
 
-                        // Obtener la parte que contiene el adjunto
-                        writer.write("A17 FETCH " + numMensaje + " BODY[" + partId + "]\r\n");
-                        writer.flush();
-                        StringBuilder attachmentData = new StringBuilder();
-                        while (!(response = reader.readLine()).startsWith("A17 OK")) {
-                            attachmentData.append(response).append("\n");
+            // Parsear el mensaje MIME y extraer los adjuntos
+            String[] lineas = mensajeCompleto.toString().split("\n");
+            boolean esAdjunto = false;
+            String nombreArchivo = null;
+            StringBuilder contenidoAdjunto = new StringBuilder();
+            Pattern pattern = Pattern.compile("filename=\"(.*?)\"");
+            for (String linea : lineas) {
+                if (linea.startsWith("Content-Disposition: attachment;")) {
+                    esAdjunto = true;
+                    Matcher matcher = pattern.matcher(linea);
+                    if (matcher.find()) {
+                        nombreArchivo = matcher.group(1);
+                    }
+                } else if (esAdjunto) {
+                    if (linea.trim().isEmpty()) {
+                        // Decodificar y guardar el adjunto
+                        byte[] datosAdjunto = Base64.getMimeDecoder().decode(contenidoAdjunto.toString());
+                        try (OutputStream out = new FileOutputStream(rutaDescarga + "/" + nombreArchivo)) {
+                            out.write(datosAdjunto);
                         }
-
-                        // Decodificar los datos base64 y guardarlos en un archivo
-                        String base64Data = attachmentData.toString();
-                        byte[] decodedData = Base64.getDecoder().decode(base64Data);
-
-                        // Escribir los datos decodificados en un archivo
-                        FileOutputStream fos = new FileOutputStream(carpetaDestino + "/adjunto_" + partId + ".dat");
-                        fos.write(decodedData);
-                        fos.close();
-                        System.out.println("Archivo adjunto guardado en: " + carpetaDestino + "/adjunto_" + partId + ".dat");
+                        contenidoAdjunto.setLength(0);
+                        esAdjunto = false;
+                        nombreArchivo = null;
+                    } else {
+                        contenidoAdjunto.append(linea.trim());
                     }
                 }
-            } else {
-                System.out.println("No se encontraron archivos adjuntos en el mensaje.");
             }
         } catch (Exception e) {
             e.printStackTrace();

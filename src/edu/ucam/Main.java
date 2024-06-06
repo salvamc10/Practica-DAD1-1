@@ -191,6 +191,22 @@ public class Main {
                     }
                     break;
                     
+                case 9:
+                    System.out.println("--- DESCARGAR ARCHIVOS ADJUNTOS ---");
+                    if (configuracionIMAP.tieneConfiguracion(usuario)) {
+                        String[] configuracion = configuracionIMAP.getConfiguracionIMAP(usuario);
+                        clienteIMAP.conectar(configuracion[0], Integer.parseInt(configuracion[1]), configuracion[2], configuracion[3]);
+                        System.out.print("Ingrese el número del mensaje: ");
+                        int numMensaje = Integer.parseInt(scanner.nextLine());
+                        System.out.print("Ingrese la ruta de descarga: ");
+                        String rutaDescarga = scanner.nextLine();
+                        clienteIMAP.descargarAdjuntos(numMensaje, rutaDescarga);
+                        clienteIMAP.desconectar();
+                    } else {
+                        System.out.println("No hay configuración IMAP disponible para el usuario.");
+                    }
+                    break;
+
                 case 8:
                     System.out.println("--- MOVER MENSAJE ENTRE CARPETAS ---");
                     if (configuracionIMAP.tieneConfiguracion(usuario)) {
@@ -207,23 +223,7 @@ public class Main {
                     } else {
                         System.out.println("No hay configuración IMAP disponible para el usuario.");
                     }
-                    break;
-                    
-                case 9:
-                    System.out.println("--- DESCARGAR ARCHIVOS ADJUNTOS ---");
-                    if (configuracionIMAP.tieneConfiguracion(usuario)) {
-                        String[] configuracion = configuracionIMAP.getConfiguracionIMAP(usuario);
-                        clienteIMAP.conectar(configuracion[0], Integer.parseInt(configuracion[1]), configuracion[2], configuracion[3]);
-                        System.out.print("Ingrese el número del mensaje: ");
-                        int numMensajeAdjunto = Integer.parseInt(scanner.nextLine());
-                        System.out.print("Ingrese la carpeta de destino para los adjuntos: ");
-                        String carpetaDestino = scanner.nextLine();
-                        clienteIMAP.descargarAdjuntos(numMensajeAdjunto, carpetaDestino);
-                        clienteIMAP.desconectar();
-                    } else {
-                        System.out.println("No hay configuración IMAP disponible para el usuario.");
-                    }
-                    break;
+                    break;                                    
                     
                 case 10:
                     System.out.println("Cerrando sesión de usuario...");
