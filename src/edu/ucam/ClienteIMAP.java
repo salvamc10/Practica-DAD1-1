@@ -1,14 +1,6 @@
 package edu.ucam;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.util.Base64;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.*;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -37,56 +29,34 @@ public class ClienteIMAP {
     }
 
     private void login(String email, String contraseña) throws Exception {
-        // Enviar el comando de inicio de sesión
         writer.write("A1 LOGIN " + email + " " + contraseña + "\r\n");
         writer.flush();
-        // Leer la respuesta del servidor
-        String response = reader.readLine();
-        System.out.println(response);
+        leerRespuesta("A1 OK");
     }
 
     public void listarCorreosBuzonPrincipal() {
         try {
-            // Enviar el comando para seleccionar el buzón INBOX
             writer.write("A2 SELECT INBOX\r\n");
             writer.flush();
-            // Leer la respuesta del servidor
-            String response;
-            while (!(response = reader.readLine()).startsWith("A2 OK")) {
-                System.out.println(response);
-            }
+            leerRespuesta("A2 OK");
 
-            // Enviar el comando para obtener información sobre los correos en la bandeja de entrada
             writer.write("A3 FETCH 1:* (BODY[HEADER.FIELDS (SUBJECT DATE FROM)])\r\n");
             writer.flush();
-            // Leer la respuesta del servidor
-            while ((response = reader.readLine()) != null) {
-                System.out.println(response);
-                if (response.startsWith("A3 OK")) {
-                    break;
-                }
-            }
+            leerRespuesta("A3 OK");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    
+
     public void leerContenidoMensaje(int numMensaje) {
         try {
-            // Seleccionar el buzón INBOX
             writer.write("A3 SELECT INBOX\r\n");
             writer.flush();
-            String response;
-            while (!(response = reader.readLine()).startsWith("A3 OK")) {
-                System.out.println(response);
-            }
+            leerRespuesta("A3 OK");
 
-            // Ahora fetch el contenido del mensaje
             writer.write("A4 FETCH " + numMensaje + " BODY[TEXT]\r\n");
             writer.flush();
-            while (!(response = reader.readLine()).startsWith("A4 OK")) {
-                System.out.println(response);
-            }
+            leerRespuesta("A4 OK");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -94,28 +64,17 @@ public class ClienteIMAP {
 
     public void eliminarMensaje(int numMensaje) {
         try {
-            // Seleccionar el buzón INBOX
             writer.write("A3 SELECT INBOX\r\n");
             writer.flush();
-            String response;
-            while (!(response = reader.readLine()).startsWith("A3 OK")) {
-                System.out.println(response);
-            }
+            leerRespuesta("A3 OK");
 
-            // Enviar el comando para marcar el mensaje como eliminado
             writer.write("A5 STORE " + numMensaje + " +FLAGS \\Deleted\r\n");
             writer.flush();
-            while (!(response = reader.readLine()).startsWith("A5 OK")) {
-                System.out.println(response);
-            }
+            leerRespuesta("A5 OK");
 
-            // Enviar el comando para expurgar el mensaje marcado
             writer.write("A6 EXPUNGE\r\n");
             writer.flush();
-            while (!(response = reader.readLine()).startsWith("A6 OK")) {
-                System.out.println(response);
-            }
-
+            leerRespuesta("A6 OK");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -125,10 +84,7 @@ public class ClienteIMAP {
         try {
             writer.write("A7 CREATE " + nombreCarpeta + "\r\n");
             writer.flush();
-            String response;
-            while (!(response = reader.readLine()).startsWith("A7 OK")) {
-                System.out.println(response);
-            }
+            leerRespuesta("A7 OK");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -138,10 +94,7 @@ public class ClienteIMAP {
         try {
             writer.write("A8 DELETE " + nombreCarpeta + "\r\n");
             writer.flush();
-            String response;
-            while (!(response = reader.readLine()).startsWith("A8 OK")) {
-                System.out.println(response);
-            }
+            leerRespuesta("A8 OK");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -151,136 +104,119 @@ public class ClienteIMAP {
         try {
             writer.write("A9 SELECT " + nombreCarpeta + "\r\n");
             writer.flush();
-            String response;
-            while (!(response = reader.readLine()).startsWith("A9 OK")) {
-                System.out.println(response);
-            }
+            leerRespuesta("A9 OK");
+
             writer.write("A10 FETCH 1:* (BODY[HEADER.FIELDS (SUBJECT DATE FROM)])\r\n");
             writer.flush();
-            while (!(response = reader.readLine()).startsWith("A10 OK")) {
-                System.out.println(response);
-            }
+            leerRespuesta("A10 OK");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    
+
     public void moverMensaje(String origenCarpeta, String destinoCarpeta, int numMensaje) {
         try {
-            // Seleccionar la carpeta de origen
             writer.write("A11 SELECT " + origenCarpeta + "\r\n");
             writer.flush();
-            String response;
-            while (!(response = reader.readLine()).startsWith("A11 OK")) {
-                System.out.println(response);
-            }
+            leerRespuesta("A11 OK");
 
-            // Copiar el mensaje a la carpeta de destino
             writer.write("A12 COPY " + numMensaje + " " + destinoCarpeta + "\r\n");
             writer.flush();
-            while (!(response = reader.readLine()).startsWith("A12 OK")) {
-                System.out.println(response);
-            }
+            leerRespuesta("A12 OK");
 
-            // Marcar el mensaje original como eliminado
             writer.write("A13 STORE " + numMensaje + " +FLAGS \\Deleted\r\n");
             writer.flush();
-            while (!(response = reader.readLine()).startsWith("A13 OK")) {
-                System.out.println(response);
-            }
+            leerRespuesta("A13 OK");
 
-            // Expurgar el mensaje marcado como eliminado
             writer.write("A14 EXPUNGE\r\n");
             writer.flush();
-            while (!(response = reader.readLine()).startsWith("A14 OK")) {
-                System.out.println(response);
-            }
-
+            leerRespuesta("A14 OK");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    
-    //Correo de pruebas 1: correopruebasdad@gmail.com
-    //Contraseña: ukevzowqnrrmstsm 
-    ///Users/salvamc/Downloads/cosas
-    public void descargarAdjuntos(int numMensaje, String rutaDescarga) {
+
+    public void descargarAdjuntos(int numMensaje, String rutaDestino) {
         try {
-            // Seleccionar el buzón INBOX
             writer.write("A3 SELECT INBOX\r\n");
             writer.flush();
-            String response;
-            while (!(response = reader.readLine()).startsWith("A3 OK")) {
-                System.out.println(response);
-            }
+            leerRespuesta("A3 OK");
 
-            // Obtener el cuerpo completo del mensaje
-            writer.write("A4 FETCH " + numMensaje + " BODY.PEEK[]\r\n");
+            writer.write("A4 FETCH " + numMensaje + " BODY[HEADER]\r\n");
             writer.flush();
-            StringBuilder mensajeCompleto = new StringBuilder();
-            while ((response = reader.readLine()) != null) {
-                mensajeCompleto.append(response).append("\n");
-                if (response.startsWith("A4 OK")) {
-                    break;
-                }
+
+            String respuesta = leerRespuestaCompleta("A4 OK");
+
+            String boundary = obtenerBoundary(respuesta);
+            if (boundary == null) {
+                System.out.println("No se pudo obtener el boundary del mensaje.");
+                return;
             }
 
-            // Parsear el mensaje MIME y extraer los adjuntos
-            String[] lineas = mensajeCompleto.toString().split("\n");
-            boolean esAdjunto = false;
-            boolean esBase64 = false;
-            String nombreArchivo = null;
-            StringBuilder contenidoAdjunto = new StringBuilder();
-            Pattern pattern = Pattern.compile("filename=\"(.*?)\"");
-            for (String linea : lineas) {
-                if (linea.startsWith("Content-Disposition: attachment;")) {
-                    esAdjunto = true;
-                    esBase64 = false;  // Resetear el flag de base64
-                    Matcher matcher = pattern.matcher(linea);
-                    if (matcher.find()) {
-                        nombreArchivo = matcher.group(1);
-                    }
-                } else if (esAdjunto && linea.startsWith("Content-Transfer-Encoding: base64")) {
-                    esBase64 = true;
-                } else if (esAdjunto && esBase64) {
-                    if (linea.startsWith("--")) {
-                        // Guardar el adjunto cuando se encuentra un boundary
-                        if (contenidoAdjunto.length() > 0) {
-                            guardarArchivoAdjunto(nombreArchivo, contenidoAdjunto.toString(), rutaDescarga);
-                            contenidoAdjunto.setLength(0);
+            writer.write("A5 FETCH " + numMensaje + " BODY[]\r\n");
+            writer.flush();
+            respuesta = leerRespuestaCompleta("A5 OK");
+
+            guardarAdjuntos(respuesta, boundary, rutaDestino);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String obtenerBoundary(String response) {
+        String boundaryPrefix = "boundary=\"";
+        int boundaryIndex = response.indexOf(boundaryPrefix);
+        if (boundaryIndex != -1) {
+            int startIndex = boundaryIndex + boundaryPrefix.length();
+            int endIndex = response.indexOf("\"", startIndex);
+            return response.substring(startIndex, endIndex);
+        } else {
+            boundaryPrefix = "boundary=";
+            boundaryIndex = response.indexOf(boundaryPrefix);
+            if (boundaryIndex != -1) {
+                int startIndex = boundaryIndex + boundaryPrefix.length();
+                int endIndex = response.indexOf("\r\n", startIndex);
+                return response.substring(startIndex, endIndex).replace("\"", "");
+            }
+        }
+        return null;
+    }
+
+    private void guardarAdjuntos(String response, String boundary, String rutaDestino) throws IOException {
+        String[] parts = response.split("--" + boundary);
+        for (String part : parts) {
+            if (part.contains("Content-Disposition: attachment")) {
+                String[] lines = part.split("\r\n");
+                String filename = null;
+                StringBuilder fileContent = new StringBuilder();
+                boolean contentStarted = false;
+
+                for (String line : lines) {
+                    if (line.startsWith("Content-Disposition: attachment;")) {
+                        int filenameIndex = line.indexOf("filename=\"");
+                        if (filenameIndex != -1) {
+                            int startIndex = filenameIndex + "filename=\"".length();
+                            int endIndex = line.indexOf("\"", startIndex);
+                            filename = line.substring(startIndex, endIndex);
                         }
-                        esAdjunto = false;
-                        esBase64 = false;
-                        nombreArchivo = null;
-                    } else {
-                        contenidoAdjunto.append(linea);
-                    }
-                } else if (esAdjunto && !esBase64) {
-                    if (linea.startsWith("--")) {
-                        esAdjunto = false;
+                    } else if (contentStarted) {
+                        fileContent.append(line).append("\r\n");
+                    } else if (line.isEmpty()) {
+                        contentStarted = true;
                     }
                 }
+
+                if (filename != null) {
+                    File file = new File(rutaDestino, filename);
+                    try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
+                        bw.write(fileContent.toString());
+                    }
+                    System.out.println("Archivo adjunto guardado: " + filename);
+                }
             }
-            // Asegurarse de guardar cualquier adjunto pendiente
-            if (contenidoAdjunto.length() > 0 && nombreArchivo != null) {
-                guardarArchivoAdjunto(nombreArchivo, contenidoAdjunto.toString(), rutaDescarga);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
-    private void guardarArchivoAdjunto(String nombreArchivo, String contenidoBase64, String rutaDescarga) {
-        try {
-            // Guardar el contenido Base64 directamente en un archivo
-            try (OutputStream out = new FileOutputStream(rutaDescarga + "/" + nombreArchivo)) {
-                out.write(contenidoBase64.getBytes());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    
     public void desconectar() {
         try {
             if (socket != null && !socket.isClosed()) {
@@ -293,5 +229,21 @@ public class ClienteIMAP {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void leerRespuesta(String esperado) throws Exception {
+        String response;
+        while (!(response = reader.readLine()).startsWith(esperado)) {
+            System.out.println(response);
+        }
+    }
+
+    private String leerRespuestaCompleta(String esperado) throws Exception {
+        StringBuilder respuestaCompleta = new StringBuilder();
+        String response;
+        while (!(response = reader.readLine()).startsWith(esperado)) {
+            respuestaCompleta.append(response).append("\r\n");
+        }
+        return respuestaCompleta.toString();
     }
 }
